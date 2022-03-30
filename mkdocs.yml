@@ -1,0 +1,11 @@
+site_name: napari-labelprop-remote
+site_description: Label Propagation with deep registration (deported computingg)
+site_author: Nathan Decaux
+
+theme: readthedocs
+
+
+repo_url: https://github.com/nathandecaux/napari-labelprop-remote
+
+pages:
+- Home: index.md
