@@ -8,6 +8,9 @@ contributions:
     - id: napari-labelprop-remote.inference
       python_name: napari_labelprop_remote._widget:inference
       title: Propagate labels 
+    - id: napari-labelprop-remote.training
+      python_name: napari_labelprop_remote._widget:training
+      title: Training to propagate
   readers:
     - command: napari-labelprop-remote.get_reader
       accepts_directories: false
@@ -16,3 +19,5 @@ contributions:
     - command: napari-labelprop-remote.inference
       # autogenerate: true
       display_name: Inference 
+    - command: napari-labelprop-remote.training  
+      display_name: Training 
