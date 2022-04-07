@@ -25,7 +25,7 @@ url = f'http://{host}:{port}'
 
 def create_buf_npz(array_dict):
     buf = io.BytesIO()
-    np.savez_compressed(buf, **array_dict)
+    np.savez(buf, **array_dict)
     buf.seek(0)
     return buf
 
@@ -121,7 +121,7 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     # return [((Y_up).astype(int), {'name': 'propagated_up'}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down'}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused'}, 'labels')]
 
 @magic_factory(pretrained_checkpoint={'choices':['']+get_ckpts()})
-def training(image: "napari.types.ImageData", labels: "napari.types.LabelsData", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',pretraining=False) -> "napari.types.LayerDataTuple":
+def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',pretraining=False) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
@@ -129,7 +129,7 @@ def training(image: "napari.types.ImageData", labels: "napari.types.LabelsData",
     r=urljoin(url,'training')
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':pretraining}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image,'mask':labels})
+    buf=create_buf_npz({'img':image.data,'mask':labels.data})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -139,7 +139,7 @@ def training(image: "napari.types.ImageData", labels: "napari.types.LabelsData",
     r=r+'?token='+token
     npz_file=np.load(get_file(r),encoding = 'latin1')
     Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype(int), {'name': 'propagated_up'}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down'}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused'}, 'labels')]
+    return [((Y_up).astype(int), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
 
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
