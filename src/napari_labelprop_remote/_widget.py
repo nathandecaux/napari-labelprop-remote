@@ -95,7 +95,7 @@ class Checkpoints(Enum):
     inject_items(locals(), ['a','b','c'])
 
 @magic_factory(checkpoint={'choices':['']+get_ckpts()})
-def inference(image: "napari.types.ImageData", labels: "napari.types.LabelsData",z_axis: int, label : int, checkpoint='') -> "napari.types.LayerDataTuple":
+def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='') -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
@@ -103,7 +103,7 @@ def inference(image: "napari.types.ImageData", labels: "napari.types.LabelsData"
     r=urljoin(url,'inference')
     params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image,'mask':labels})
+    buf=create_buf_npz({'img':image.data,'mask':labels.data})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -113,7 +113,7 @@ def inference(image: "napari.types.ImageData", labels: "napari.types.LabelsData"
     r=r+'?token='+token
     npz_file=np.load(get_file(r),encoding = 'latin1')
     Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype(int), {'name': 'propagated_up'}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down'}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused'}, 'labels')]
+    return [((Y_up).astype(int), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
     # shape=torch.load(checkpoint)['hyper_parameters']['shape'][0]
     # if label==0: label='all'
     # Y_up, Y_down, Y_fused = propagate_from_ckpt(

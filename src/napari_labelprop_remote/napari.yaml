@@ -11,10 +11,21 @@ contributions:
     - id: napari-labelprop-remote.training
       python_name: napari_labelprop_remote._widget:training
       title: Training to propagate
+    - id: napari-labelprop-remote.write_single_image
+      python_name: napari_labelprop_remote._writer:write_single_image
+      title: Save to nifti (*.nii.gz)
+
   readers:
     - command: napari-labelprop-remote.get_reader
       accepts_directories: false
       filename_patterns: ['*.nii.gz'] 
+  writers:
+    - command: napari-labelprop-remote.write_single_image
+      layer_types: ['image']
+      filename_extensions: ['.nii.gz']
+    - command: napari-labelprop-remote.write_single_image
+      layer_types: ['labels']
+      filename_extensions: ['.nii.gz']
   widgets:
     - command: napari-labelprop-remote.inference
       # autogenerate: true
