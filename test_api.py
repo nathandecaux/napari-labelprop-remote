@@ -11,7 +11,7 @@ import zipfile
 import time
 # from urllib.request import urlopen,urlretrieve
 import cgi
-host="10.29.225.156"
+host="localhost"
 port="5000"
 url = f'http://{host}:{port}'
 

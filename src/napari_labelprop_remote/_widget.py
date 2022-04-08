@@ -19,13 +19,26 @@ import io
 import numpy as np
 from urllib.parse import urljoin
 import time
+import functools
 host="10.29.225.156"
 port="5000"
 url = f'http://{host}:{port}'
 
+def timer(func):
+    @functools.wraps(func) #optional line if you went the name of the function to be maintained, to be imported
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        #do somehting with the function
+        value = func(*args, **kwargs)
+        end = time.time()
+        print(end-start)
+        return value
+    return wrapper
+
+@timer
 def create_buf_npz(array_dict):
     buf = io.BytesIO()
-    np.savez(buf, **array_dict)
+    np.savez_compressed(buf, **array_dict)
     buf.seek(0)
     return buf
 
@@ -103,7 +116,7 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     r=urljoin(url,'inference')
     params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data,'mask':labels.data})
+    buf=create_buf_npz({'img':image.data.astype('float16'),'mask':labels.data.astype('uint8')})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -113,7 +126,7 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     r=r+'?token='+token
     npz_file=np.load(get_file(r),encoding = 'latin1')
     Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype(int), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+    return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
     # shape=torch.load(checkpoint)['hyper_parameters']['shape'][0]
     # if label==0: label='all'
     # Y_up, Y_down, Y_fused = propagate_from_ckpt(
@@ -129,7 +142,7 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
     r=urljoin(url,'training')
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':pretraining}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data,'mask':labels.data})
+    buf=create_buf_npz({'img':image.data.astype('float16'),'mask':labels.data.astype('uint8')})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -139,7 +152,7 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
     r=r+'?token='+token
     npz_file=np.load(get_file(r),encoding = 'latin1')
     Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype(int), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+    return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
 
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
