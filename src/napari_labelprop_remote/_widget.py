@@ -116,7 +116,7 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     r=urljoin(url,'inference')
     params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data.astype('float16'),'mask':labels.data.astype('uint8')})
+    buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -142,7 +142,7 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
     r=urljoin(url,'training')
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':pretraining}
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data.astype('float16'),'mask':labels.data.astype('uint8')})
+    buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()

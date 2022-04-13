@@ -87,5 +87,5 @@ def reader_function(path):
         data=data.astype('uint8')
     else:
         layer_type = "image" 
-        data=data.astype('float16') # optional, default is "image"
+        data=data.astype('float32') # optional, default is "image"
     return [(data, add_kwargs, layer_type)]
