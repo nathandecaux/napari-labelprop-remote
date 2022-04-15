@@ -43,9 +43,15 @@ def create_buf_npz(array_dict):
     return buf
 
 def get_ckpts():
-    r=urljoin(url,'list_ckpts')
-    response = requests.get(r).text
-    return response.split(',')
+    try :
+        r=urljoin(url,'list_ckpts')
+        #send request (3 retries max)
+        response = requests.get(r,timeout=3).text
+    except :
+        response = 'Server Unavailable'
+        pass
+    finally:
+        return response.split(',')
 
 def get_file(url):
     """
@@ -94,10 +100,6 @@ def example_magic_widget(img_layer: "napari.layers.Image"):
 # to indicate it should be wrapped as a magicgui to autogenerate
 # a widget.
 
-def get_ckpts():
-    url = 'http://10.29.225.156:5000/list_ckpts'
-    response = requests.get(url).text
-    return response.split(',')
 
 
 def inject_items(d, items):
