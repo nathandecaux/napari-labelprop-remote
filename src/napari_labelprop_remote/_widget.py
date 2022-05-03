@@ -20,6 +20,7 @@ import numpy as np
 from urllib.parse import urljoin
 import time
 import functools
+import hashlib
 host="10.29.225.156"
 port="5000"
 url = f'http://{host}:{port}'
@@ -52,6 +53,22 @@ def get_ckpts():
         pass
     finally:
         return response.split(',')
+
+@timer
+def hash_array(array):
+    return hashlib.md5(array.tobytes()).hexdigest()
+
+def get_hash():
+    try :
+        r=urljoin(url,'list_hash')
+        #send request (3 retries max)
+        response = requests.get(r,timeout=3).text
+    except :
+        response = 'Server Unavailable'
+        pass
+    finally:
+        hash_list=response.split(',')
+        return hash_list
 
 def get_file(url):
     """
@@ -117,8 +134,15 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     """
     r=urljoin(url,'inference')
     params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint}
+    hash=hash_array(image.data.astype('float32'))
+    list_hash=get_hash()
+    if hash in list_hash:
+        params['hash']=hash
+        buf=create_buf_npz({'mask':labels.data.astype('uint8')})
+    else:
+        buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
+    
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -143,8 +167,16 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
     """
     r=urljoin(url,'training')
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':pretraining}
+    hash=hash_array(image.data.astype('float32'))
+    list_hash=get_hash()
+    if hash in list_hash:
+        params['hash']=hash
+        buf=create_buf_npz({'mask':labels.data.astype('uint8')})
+    else:
+        buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
+    
     params=json.dumps(params).encode('utf-8')
-    buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
+
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
