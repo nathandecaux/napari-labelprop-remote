@@ -22,7 +22,7 @@ import time
 import functools
 import hashlib
 host="10.29.225.156"
-port="5000"
+port="6000"
 url = f'http://{host}:{port}'
 
 def timer(func):
@@ -74,7 +74,7 @@ def get_file(url):
     """
     Download file without saving from url and return the bytes
     """
-    return io.BytesIO(requests.get(url).content)
+    return requests.get(url)#io.BytesIO(requests.get(url).content)
 
 def get_session_info(token):
     r=urljoin(url,'get_session_info')
@@ -150,9 +150,17 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
         time.sleep(5)
     r=urljoin(url,'download_inference')
     r=r+'?token='+token
-    npz_file=np.load(get_file(r),encoding = 'latin1')
-    Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+    response=get_file(r)
+    try:
+        npz_file=np.load(io.BytesIO(response.content),encoding = 'latin1')
+        Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
+        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+    except:
+        #Convert f as string
+        e=response.text
+        print(e)
+        #Raise exception with f as the message
+        raise Exception('Server-side error: '+e)
     # shape=torch.load(checkpoint)['hyper_parameters']['shape'][0]
     # if label==0: label='all'
     # Y_up, Y_down, Y_fused = propagate_from_ckpt(
@@ -184,10 +192,17 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
         time.sleep(5)
     r=urljoin(url,'download_inference')
     r=r+'?token='+token
-    npz_file=np.load(get_file(r),encoding = 'latin1')
-    Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-    return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
-
+    response=get_file(r)
+    try:
+        npz_file=np.load(io.BytesIO(response.content),encoding = 'latin1')
+        Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
+        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+    except:
+        #Convert f as string
+        e=response.text
+        print(e)
+        #Raise exception with f as the message
+        raise Exception('Server-side error: '+e)
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
 
