@@ -127,13 +127,17 @@ class Checkpoints(Enum):
     inject_items(locals(), ['a','b','c'])
 
 @magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
-def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='distance',reduction='mean') -> "napari.types.LayerDataTuple":
+def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='distance',reduction='mean',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
     """
     r=urljoin(url,'inference')
-    params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint,'criteria':criteria,'reduction':reduction}
+    if gpu:
+        device='cuda'
+    else:
+        device='cpu'
+    params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
     if hash in list_hash:
