@@ -14,6 +14,9 @@ contributions:
     - id: napari-labelprop-remote.write_single_image
       python_name: napari_labelprop_remote._writer:write_single_image
       title: Save to nifti (*.nii.gz)
+    - id: napari-labelprop-remote.settings
+      python_name: napari_labelprop_remote._widget:settings
+      title: Settings
 
   readers:
     - command: napari-labelprop-remote.get_reader
@@ -32,3 +35,7 @@ contributions:
       display_name: Inference 
     - command: napari-labelprop-remote.training  
       display_name: Training 
+    - command: napari-labelprop-remote.settings
+      # autogenerate: true
+      display_name: Settings
+      

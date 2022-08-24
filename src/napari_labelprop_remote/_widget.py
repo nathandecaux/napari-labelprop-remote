@@ -6,9 +6,11 @@ see: https://napari.org/plugins/stable/guides.html#widgets
 
 Replace code below according to your needs.
 """
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QPushButton
+from qtpy.QtWidgets import QWidget, QHBoxLayout, PushButton
 from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select
+from magicgui.widgets import Select,Slider
+from magicgui.widgets import FunctionGui
+
 import requests
 from enum import Enum,unique
 import requests
@@ -21,6 +23,8 @@ from urllib.parse import urljoin
 import time
 import functools
 import hashlib
+from napari.plugins import NapariPluginManager
+
 host="10.29.225.156"
 port="6000"
 url = f'http://{host}:{port}'
@@ -45,6 +49,7 @@ def create_buf_npz(array_dict):
 
 def get_ckpts():
     try :
+
         r=urljoin(url,'list_ckpts')
         #send request (3 retries max)
         response = requests.get(r,timeout=3).text
@@ -53,6 +58,8 @@ def get_ckpts():
         pass
     finally:
         return response.split(',')
+
+
 
 @timer
 def hash_array(array):
@@ -109,7 +116,7 @@ class ExampleQWidget(QWidget):
 
 
 @magic_factory
-def example_magic_widget(img_layer: "napari.layers.Image"):
+def example_magic_widget(img_layer: "napari.layers.Image"): 
     print(f"you have selected {img_layer}")
 
 
@@ -126,8 +133,28 @@ def inject_items(d, items):
 class Checkpoints(Enum):
     inject_items(locals(), ['a','b','c'])
 
+def show_ckpts(ckpts : str='') -> None :
+    print(ckpts)
+
+
+class settings(FunctionGui):
+    def __init__(self):
+        super().__init__(show_ckpts,call_button=True,param_options={'ckpts':{'choices':['']+get_ckpts()}})
+        btn=PushButton('Refresh').clicked.connect(self._on_click)
+        self.insert(0,btn)
+
+    def __call__(self):
+        self.ckpts.choices = ['']+get_ckpts()
+        super.__call__()
+    def _on_click(self):
+        self.ckpts.choices = ['']+get_ckpts()
+
+
+        
+               
+
 @magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
-def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='distance',reduction='mean',gpu=True) -> "napari.types.LayerDataTuple":
+def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
