@@ -6,9 +6,9 @@ see: https://napari.org/plugins/stable/guides.html#widgets
 
 Replace code below according to your needs.
 """
-from qtpy.QtWidgets import QWidget, QHBoxLayout, PushButton
+from qtpy.QtWidgets import QWidget, QHBoxLayout
 from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select,Slider
+from magicgui.widgets import Select,Slider,PushButton
 from magicgui.widgets import FunctionGui
 
 import requests
@@ -25,9 +25,10 @@ import functools
 import hashlib
 from napari.plugins import NapariPluginManager
 
-host="10.29.225.156"
-port="6000"
-url = f'http://{host}:{port}'
+global server
+global url
+server=json.load(fp=open('conf.json'))
+url = f'http://{server["host"]}:{server["port"]}'
 
 def timer(func):
     @functools.wraps(func) #optional line if you went the name of the function to be maintained, to be imported
@@ -47,10 +48,10 @@ def create_buf_npz(array_dict):
     buf.seek(0)
     return buf
 
-def get_ckpts():
+def get_ckpts(host=url):
     try :
 
-        r=urljoin(url,'list_ckpts')
+        r=urljoin(host,'list_ckpts')
         #send request (3 retries max)
         response = requests.get(r,timeout=3).text
     except :
@@ -133,28 +134,33 @@ def inject_items(d, items):
 class Checkpoints(Enum):
     inject_items(locals(), ['a','b','c'])
 
-def show_ckpts(ckpts : str='') -> None :
-    print(ckpts)
+def configure_server(host : str=server["host"],port : str=server["port"]) -> None :
+    list_ckpts=get_ckpts(f'http://{host}:{port}')
+    if 'Server Unavailable' in list_ckpts:
+        raise Exception('Server Unavailable')
+    else:
+        server["host"]=host
+        server["port"]=port
+        json.dump(server,fp=open('conf.json','w'))
+        print('Server Configured')
+        raise Exception('Server Configured')
+
 
 
 class settings(FunctionGui):
     def __init__(self):
-        super().__init__(show_ckpts,call_button=True,param_options={'ckpts':{'choices':['']+get_ckpts()}})
-        btn=PushButton('Refresh').clicked.connect(self._on_click)
-        self.insert(0,btn)
+        super().__init__(configure_server)
 
     def __call__(self):
-        self.ckpts.choices = ['']+get_ckpts()
-        super.__call__()
-    def _on_click(self):
-        self.ckpts.choices = ['']+get_ckpts()
+        super().__call__()
+
 
 
         
                
 
-@magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
-def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
+# @magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
+def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
@@ -197,6 +203,19 @@ def inference(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axi
     # Y_up, Y_down, Y_fused = propagate_from_ckpt(
     #     image, labels, checkpoint, z_axis=z_axis,lab=label,shape=shape)
     # return [((Y_up).astype(int), {'name': 'propagated_up'}, 'labels'), ((Y_down).astype(int), {'name': 'propagated_down'}, 'labels'), ((Y_fused).astype(int), {'name': 'propagated_fused'}, 'labels')]
+
+class inference(FunctionGui):
+    def __init__(self):
+        super().__init__(inference_function,call_button=True,param_options={'checkpoint':{'choices':['']+get_ckpts()},'criteria':{'choices':['distance','ncc']},'reduction':{'choices':['none','local_mean','mean']}})
+        btn=PushButton()
+        btn.clicked.connect(self._on_click)
+        btn.text='Refresh list'
+        self.insert(5,btn)
+
+    def __call__(self):
+        super().__call__()
+    def _on_click(self):
+        self.checkpoint.choices = ['']+get_ckpts()
 
 @magic_factory(pretrained_checkpoint={'choices':['']+get_ckpts()})
 def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',pretraining=False) -> "napari.types.LayerDataTuple":
