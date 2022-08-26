@@ -8,7 +8,7 @@ Replace code below according to your needs.
 """
 from qtpy.QtWidgets import QWidget, QHBoxLayout
 from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select,Slider,PushButton
+from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container
 from magicgui.widgets import FunctionGui
 
 import requests
@@ -24,10 +24,14 @@ import time
 import functools
 import hashlib
 from napari.plugins import NapariPluginManager
-
+import napari
+import os
+#Get path to this package
+package_path = os.path.dirname(os.path.abspath(__file__))
+print(package_path)
 global server
 global url
-server=json.load(fp=open('conf.json'))
+server=json.load(fp=open(os.path.join(package_path,'conf.json')))
 url = f'http://{server["host"]}:{server["port"]}'
 
 def timer(func):
@@ -48,7 +52,13 @@ def create_buf_npz(array_dict):
     buf.seek(0)
     return buf
 
-def get_ckpts(host=url):
+def get_url():
+    server=json.load(fp=open(os.path.join(package_path,'conf.json')))
+    return f'http://{server["host"]}:{server["port"]}'
+
+def get_ckpts(host='configured'):
+    if host=='configured':
+        host=get_url()
     try :
 
         r=urljoin(host,'list_ckpts')
@@ -58,8 +68,9 @@ def get_ckpts(host=url):
         response = 'Server Unavailable'
         pass
     finally:
-        return response.split(',')
-
+        ckpts=response.split(',')
+        ckpts.sort()
+        return ckpts
 
 
 @timer
@@ -68,7 +79,7 @@ def hash_array(array):
 
 def get_hash():
     try :
-        r=urljoin(url,'list_hash')
+        r=urljoin(get_url(),'list_hash')
         #send request (3 retries max)
         response = requests.get(r,timeout=3).text
     except :
@@ -85,12 +96,12 @@ def get_file(url):
     return requests.get(url)#io.BytesIO(requests.get(url).content)
 
 def get_session_info(token):
-    r=urljoin(url,'get_session_info')
+    r=urljoin(get_url(),'get_session_info')
     response = requests.get(r,params={'token':token}).text
     return json.loads(response)
 
 def session_exists(token):
-    r=urljoin(url,'get_session_list')
+    r=urljoin(get_url(),'get_session_list')
     response = requests.get(r).text
     if token in response:
         return True
@@ -141,9 +152,9 @@ def configure_server(host : str=server["host"],port : str=server["port"]) -> Non
     else:
         server["host"]=host
         server["port"]=port
-        json.dump(server,fp=open('conf.json','w'))
-        print('Server Configured')
-        raise Exception('Server Configured')
+        json.dump(server,fp=open(os.path.join(package_path,'conf.json'),'w'))
+        print('Server configured and connected')
+        napari.utils.notifications.show_info('Server configured and connected')
 
 
 
@@ -160,12 +171,12 @@ class settings(FunctionGui):
                
 
 # @magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
-def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
+def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint:"napari.types.Path",criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
     """
-    r=urljoin(url,'inference')
+    r=urljoin(get_url(),'inference')
     if gpu:
         device='cuda'
     else:
@@ -185,7 +196,7 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     buf.close()
     while not session_exists(token):
         time.sleep(5)
-    r=urljoin(url,'download_inference')
+    r=urljoin(get_url(),'download_inference')
     r=r+'?token='+token
     response=get_file(r)
     try:
@@ -207,24 +218,33 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
 class inference(FunctionGui):
     def __init__(self):
         super().__init__(inference_function,call_button=True,param_options={'checkpoint':{'choices':['']+get_ckpts()},'criteria':{'choices':['distance','ncc']},'reduction':{'choices':['none','local_mean','mean']}})
-        btn=PushButton()
-        btn.clicked.connect(self._on_click)
-        btn.text='Refresh list'
-        self.insert(5,btn)
+        refresh_btn=PushButton()
+        file_select=FileEdit()
+        file_select.label='Select checkpoint from local file'
+        file_select.choices=get_ckpts()
+        refresh_btn.clicked.connect(self._on_click)
+        refresh_btn.text='Refresh list'
+        # self.insert(5,refresh_btn)
+        # self.insert(6,file_select)
+        container=Container(layout='horizontal',widgets=[refresh_btn,file_select])
+        self.insert(5,container)
 
     def __call__(self):
         super().__call__()
     def _on_click(self):
         self.checkpoint.choices = ['']+get_ckpts()
 
-@magic_factory(pretrained_checkpoint={'choices':['']+get_ckpts()})
-def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',pretraining=False) -> "napari.types.LayerDataTuple":
+def training_function(image: "napari.layers.Image", labels: "napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
     """
-    r=urljoin(url,'training')
-    params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':pretraining}
+    r=urljoin(get_url(),'training')
+    if gpu:
+        device='cuda'
+    else:
+        device='cpu'
+    params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':False,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
     if hash in list_hash:
@@ -240,7 +260,7 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
     buf.close()
     while not session_exists(token):
         time.sleep(5)
-    r=urljoin(url,'download_inference')
+    r=urljoin(get_url(),'download_inference')
     r=r+'?token='+token
     response=get_file(r)
     try:
@@ -253,6 +273,20 @@ def training(image: "napari.layers.Image", labels: "napari.layers.Labels", pretr
         print(e)
         #Raise exception with f as the message
         raise Exception('Server-side error: '+e)
+
+class training(FunctionGui):
+    def __init__(self):
+        super().__init__(training_function,call_button=True,param_options={'pretrained_checkpoint':{'choices':['']+get_ckpts()},'criteria':{'choices':['distance','ncc']},'reduction':{'choices':['none','local_mean','mean']}})
+        btn=PushButton()
+        btn.clicked.connect(self._on_click)
+        btn.text='Refresh list'
+        self.insert(5,btn)
+
+    def __call__(self):
+        super().__call__()
+    def _on_click(self):
+        self.pretrained_checkpoint.choices = ['']+get_ckpts()
+
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
 
