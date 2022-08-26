@@ -8,7 +8,7 @@ Replace code below according to your needs.
 """
 from qtpy.QtWidgets import QWidget, QHBoxLayout
 from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container
+from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container,Label,LineEdit
 from magicgui.widgets import FunctionGui
 
 import requests
@@ -108,62 +108,102 @@ def session_exists(token):
     else:
         return False
 
-class ExampleQWidget(QWidget):
-    # your QWidget.__init__ can optionally request the napari viewer instance
-    # in one of two ways:
-    # 1. use a parameter called `napari_viewer`, as done here
-    # 2. use a type annotation of 'napari.viewer.Viewer' for any parameter
-    def __init__(self, napari_viewer):
-        super().__init__()
-        self.viewer = napari_viewer
+def send_ckpt(ckpt : str) -> bool:
+    """Send file to server"""
 
-        btn = QPushButton("Click me!")
-        btn.clicked.connect(self._on_click)
+    r=urljoin(get_url(),'send_ckpt')
+    response = requests.post(r,files={'ckpt':open(ckpt)}).text
+    if response=='ok':
+        return True
+    else:
+        return False
 
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(btn)
+def get_ckpt_dir():
+    """Send request get_ckpt_dir to server"""
+    r=urljoin(get_url(),'get_ckpt_dir')
+    try:
+        response = requests.get(r,timeout=3).text
+    except:
+        response = 'Server Unavailable'
+        pass
+    return response
 
-    def _on_click(self):
-        print("napari has", len(self.viewer.layers), "layers")
-
-
-@magic_factory
-def example_magic_widget(img_layer: "napari.layers.Image"): 
-    print(f"you have selected {img_layer}")
-
-
-# Uses the `autogenerate: true` flag in the plugin manifest
-# to indicate it should be wrapped as a magicgui to autogenerate
-# a widget.
-
-
-
-def inject_items(d, items):
-    for i,v in enumerate(items):
-        d[str(v)] = v
-
-class Checkpoints(Enum):
-    inject_items(locals(), ['a','b','c'])
+def set_ckpt_dir(ckpt_dir):
+    r=urljoin(get_url(),'set_ckpt_dir')
+    response = requests.post(r,params={'ckpt_dir':ckpt_dir}).text
+    return response
 
 def configure_server(host : str=server["host"],port : str=server["port"]) -> None :
     list_ckpts=get_ckpts(f'http://{host}:{port}')
     if 'Server Unavailable' in list_ckpts:
-        raise Exception('Server Unavailable')
+        napari.utils.notifications.show_error('Server Unavailable')
+        return False
     else:
         server["host"]=host
         server["port"]=port
         json.dump(server,fp=open(os.path.join(package_path,'conf.json'),'w'))
-        print('Server configured and connected')
         napari.utils.notifications.show_info('Server configured and connected')
+        return True
 
 
 
 class settings(FunctionGui):
     def __init__(self):
-        super().__init__(configure_server)
+        super().__init__(configure_server,call_button = 'Configure Server')
+        
+        self.status=Label()
+        list_ckpts=get_ckpts()
+        self.insert(2,self.status)
+        self.checkpoint_dir=LineEdit(label='checkpoint directory')
+        self.ckpt_dir_btn=PushButton(label='Set checkpoint directory')
+        self.ckpt_dir_btn.clicked.connect(self._set_ckpt_dir)
+        self.insert(-1,self.checkpoint_dir)
+        self.insert(-1,self.ckpt_dir_btn)
+        self.send_button=PushButton(text='Send checkpoint')
+        self.send_button.clicked.connect(self._send_ckpt)
+        self.ckpt=FileEdit(label='Send checkpoint to server')
+        self.insert(-1,self.ckpt)
+        self.insert(-1,self.send_button)
+
+        if 'Server Unavailable' in list_ckpts:
+            self.status.value='Server Unavailable'
+            self.checkpoint_dir.hide()
+            self.ckpt_dir_btn.hide()
+            self.send_button.hide()
+            self.ckpt.hide()
+        else:
+            self.status.value='Server Connected'
+            self.checkpoint_dir.value=get_ckpt_dir()
+
+
 
     def __call__(self):
-        super().__call__()
+        server_ok=super().__call__()
+        if server_ok:
+            self.status.value='Server Connected'
+            self.checkpoint_dir.show()
+            self.ckpt_dir_btn.show()
+            self.send_button.show()
+            self.ckpt.show()
+            self.checkpoint_dir.value=get_ckpt_dir()
+        else:
+            self.status.value='Server Unavailable'
+            self.checkpoint_dir.hide()
+            self.ckpt_dir_btn.hide()
+            self.send_button.hide()
+            self.ckpt.hide()
+    def _send_ckpt(self):
+        ckpt=self.ckpt.value
+        if send_ckpt(ckpt):
+            napari.utils.notifications.show_info('Checkpoint sent')
+        else:
+            napari.utils.notifications.show_error('Checkpoint not sent')
+    def _set_ckpt_dir(self):
+        ckpt_dir=self.checkpoint_dir.value
+        set_ckpt_dir(ckpt_dir)
+        napari.utils.notifications.show_info('Checkpoint directory set')
+
+
 
 
 
@@ -219,15 +259,15 @@ class inference(FunctionGui):
     def __init__(self):
         super().__init__(inference_function,call_button=True,param_options={'checkpoint':{'choices':['']+get_ckpts()},'criteria':{'choices':['distance','ncc']},'reduction':{'choices':['none','local_mean','mean']}})
         refresh_btn=PushButton()
-        file_select=FileEdit()
-        file_select.label='Select checkpoint from local file'
-        file_select.choices=get_ckpts()
+        # file_select=FileEdit()
+        # file_select.label='or select locally'
+        # file_select.choices=get_ckpts()
         refresh_btn.clicked.connect(self._on_click)
-        refresh_btn.text='Refresh list'
+        refresh_btn.text='Refresh'
         # self.insert(5,refresh_btn)
         # self.insert(6,file_select)
-        container=Container(layout='horizontal',widgets=[refresh_btn,file_select])
-        self.insert(5,container)
+        # container=Container(layout='horizontal',widgets=[refresh_btn,file_select])
+        self.insert(5,refresh_btn)
 
     def __call__(self):
         super().__call__()
