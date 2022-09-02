@@ -211,7 +211,7 @@ class settings(FunctionGui):
                
 
 # @magic_factory(checkpoint={'choices':['']+get_ckpts()},criteria={'choices':['distance','ncc']},reduction={'choices':['none','local_mean','mean']})
-def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint:"napari.types.Path",criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
+def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labels",z_axis: int, label : int, checkpoint:str="",criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
@@ -224,6 +224,7 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
+    napari.utils.notifications.show_info('Compressing images')
     if hash in list_hash:
         params['hash']=hash
         buf=create_buf_npz({'mask':labels.data.astype('uint8')})
@@ -231,6 +232,7 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
         buf=create_buf_npz({'img':image.data.astype('float32'),'mask':labels.data.astype('uint8')})
     
     params=json.dumps(params).encode('utf-8')
+    napari.utils.notifications.show_info('Sending request')
     response=requests.post(r,files={'arrays':buf,'params':params})
     token=response.text
     buf.close()
@@ -262,17 +264,28 @@ class inference(FunctionGui):
         # file_select=FileEdit()
         # file_select.label='or select locally'
         # file_select.choices=get_ckpts()
-        refresh_btn.clicked.connect(self._on_click)
+        self.checkpoint.choices=['']+get_ckpts()
+        refresh_btn.clicked.connect(self.click)
         refresh_btn.text='Refresh'
+        self.criteria.changed.connect(self.update_reduction)
+
         # self.insert(5,refresh_btn)
         # self.insert(6,file_select)
         # container=Container(layout='horizontal',widgets=[refresh_btn,file_select])
         self.insert(5,refresh_btn)
 
     def __call__(self):
+        napari.utils.notifications.show_info('Inference started')
         super().__call__()
-    def _on_click(self):
+        napari.utils.notifications.show_info('Inference finished')
+    def click(self):
         self.checkpoint.choices = ['']+get_ckpts()
+    def update_reduction(self):
+        if self.criteria.value=='distance':
+            self.reduction.value='mean'
+            self.reduction.hide()
+        else:
+            self.reduction.show()
 
 def training_function(image: "napari.layers.Image", labels: "napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
@@ -317,15 +330,27 @@ def training_function(image: "napari.layers.Image", labels: "napari.layers.Label
 class training(FunctionGui):
     def __init__(self):
         super().__init__(training_function,call_button=True,param_options={'pretrained_checkpoint':{'choices':['']+get_ckpts()},'criteria':{'choices':['distance','ncc']},'reduction':{'choices':['none','local_mean','mean']}})
+        self.criteria.changed.connect(self.update_reduction)
+
         btn=PushButton()
         btn.clicked.connect(self._on_click)
         btn.text='Refresh list'
         self.insert(5,btn)
 
     def __call__(self):
+        napari.utils.notifications.show_info('Training started')
         super().__call__()
+        napari.utils.notifications.show_info('Training finished')    
+    
     def _on_click(self):
         self.pretrained_checkpoint.choices = ['']+get_ckpts()
+
+    def update_reduction(self):
+        if self.criteria.value=='distance':
+            self.reduction.value='mean'
+            self.reduction.hide()
+        else:
+            self.reduction.show()
 
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
