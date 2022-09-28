@@ -80,6 +80,7 @@ def reader_function(path):
     # stack arrays into single array
     data = file.get_fdata()
 
+    #Remove translation on affine
     add_kwargs={"name":str(path.split('/')[-1]).replace('nii.gz',''), 'metadata':dict(affine=file.affine, header=file.header)}
     print('coucou',file.get_data_dtype())
     if 'uint' in str(file.get_data_dtype()) :

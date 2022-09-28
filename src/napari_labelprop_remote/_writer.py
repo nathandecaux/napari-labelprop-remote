@@ -9,6 +9,7 @@ Replace code below according to your needs.
 from __future__ import annotations
 from typing import TYPE_CHECKING, List, Any, Sequence, Tuple, Union
 import nibabel as ni
+import numpy as np
 if TYPE_CHECKING:
     DataType = Union[Any, Sequence[Any]]
     FullLayerData = Tuple[DataType, dict, str]
@@ -18,7 +19,14 @@ def write_single_image(path: str, data: Any, meta: dict):
     """Writes a single image layer"""
     if not 'nii.gz' in path:
         path = path + '.nii.gz'
-    nib = ni.Nifti1Image(data, meta['metadata']['affine'])
+    if 'metadata' in meta:
+        if 'affine' in meta['metadata']:
+            affine = meta['metadata']['affine']
+        else:
+            affine = np.eye(4)
+    else:
+        affine = np.eye(4)
+    nib = ni.Nifti1Image(data, affine)
     print(meta)
     nib.to_filename(path)
     pass

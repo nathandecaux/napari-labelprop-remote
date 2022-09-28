@@ -10,7 +10,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout
 from magicgui import magic_factory,magicgui
 from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container,Label,LineEdit
 from magicgui.widgets import FunctionGui
-
+import sys
 import requests
 from enum import Enum,unique
 import requests
@@ -66,7 +66,7 @@ def get_ckpts(host='configured'):
         response = requests.get(r,timeout=3).text
     except :
         response = 'Server Unavailable'
-        pass
+        # raise Exception(response)
     finally:
         ckpts=response.split(',')
         ckpts.sort()
@@ -82,56 +82,77 @@ def get_hash():
         r=urljoin(get_url(),'list_hash')
         #send request (3 retries max)
         response = requests.get(r,timeout=3).text
-    except :
-        response = 'Server Unavailable'
-        pass
-    finally:
         hash_list=response.split(',')
         return hash_list
+    except :
+        response = 'Server Unavailable'
+        raise Exception(response)
+
 
 def get_file(url):
     """
     Download file without saving from url and return the bytes
     """
-    return requests.get(url)#io.BytesIO(requests.get(url).content)
+    try:
+        response = requests.get(url,timeout=10)
+        return response
+    except:
+        raise Exception('Server Unavailable')
 
 def get_session_info(token):
     r=urljoin(get_url(),'get_session_info')
-    response = requests.get(r,params={'token':token}).text
-    return json.loads(response)
+    try:
+        response = requests.get(r,params={'token':token}).text
+        return json.loads(response)
+    except :
+        response = 'Server Unavailable'
+        raise Exception(response)
 
 def session_exists(token):
     r=urljoin(get_url(),'get_session_list')
-    response = requests.get(r).text
-    if token in response:
-        return True
-    else:
-        return False
+    try:
+        response = requests.get(r,timeout=5).text
+        if token in response:
+            return True
+        else:
+            return False
+    except:
+        response = 'Server Unavailable'
+        raise Exception(response)
 
+        
 def send_ckpt(ckpt : str) -> bool:
     """Send file to server"""
 
     r=urljoin(get_url(),'send_ckpt')
-    response = requests.post(r,files={'ckpt':open(ckpt)}).text
-    if response=='ok':
-        return True
-    else:
-        return False
+    try:
+        response = requests.post(r,files={'ckpt':open(ckpt)}).text
+        if response=='ok':
+            return True
+        else:
+            return False
+    except:
+        response = 'Server Unavailable'
+        raise Exception(response)
 
 def get_ckpt_dir():
     """Send request get_ckpt_dir to server"""
     r=urljoin(get_url(),'get_ckpt_dir')
     try:
         response = requests.get(r,timeout=3).text
+        return response
     except:
         response = 'Server Unavailable'
-        pass
-    return response
+        raise Exception(response)
 
 def set_ckpt_dir(ckpt_dir):
     r=urljoin(get_url(),'set_ckpt_dir')
-    response = requests.post(r,params={'ckpt_dir':ckpt_dir}).text
-    return response
+    try:
+        response = requests.post(r,params={'ckpt_dir':ckpt_dir}).text
+        return response
+    except:
+        response = 'Server Unavailable'
+        raise Exception(response)
 
 def configure_server(host : str=server["host"],port : str=server["port"]) -> None :
     list_ckpts=get_ckpts(f'http://{host}:{port}')
