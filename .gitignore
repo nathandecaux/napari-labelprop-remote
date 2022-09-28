@@ -84,3 +84,5 @@ venv/
 **/_version.py
 *.nii.gz
 img.nii.gz
+test.ipynb
+labels_2.txt

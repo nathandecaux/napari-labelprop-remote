@@ -17,6 +17,12 @@ contributions:
     - id: napari-labelprop-remote.settings
       python_name: napari_labelprop_remote._widget:settings
       title: Server configuration
+    - id: napari-labelprop-remote.create_hints
+      python_name: napari_labelprop_remote._widget:create_hints
+      title: Create hints
+    - id : napari-labelprop-remote.set_label_colormap
+      python_name: napari_labelprop_remote._widget:set_label_colormap
+      title: Set label colormap
 
   readers:
     - command: napari-labelprop-remote.get_reader
@@ -38,4 +44,7 @@ contributions:
     - command: napari-labelprop-remote.settings
       # autogenerate: true
       display_name: Configuration
+    - command: napari-labelprop-remote.set_label_colormap
+      # autogenerate: true
+      display_name: Set label colormap
       

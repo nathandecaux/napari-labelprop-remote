@@ -391,6 +391,42 @@ class training(FunctionGui):
         print(self.viewer.layers)
         self.hints.choices=['']+[x for x in self.viewer.layers if isinstance(x,napari.layers.Labels)]
 
+def set_label_colormap_function(labels_layer : "napari.layers.Labels"):
+    return labels
+
+class set_label_colormap(FunctionGui):
+    def __init__(self,viewer: "napari.viewer.Viewer"):
+        super().__init__(set_label_colormap_function,call_button=False)
+        self.viewer=viewer
+        self.colormap_file=FileEdit(label='Get colormap from file')
+        self.insert(-1,self.colormap_file)
+        self.colormap_file.changed.connect(self.update_colormap)
+
+    def update_colormap(self):
+        if self.colormap_file.value!='':
+            with open("labels_2.labels", "r") as f:
+                labels = f.read().splitlines()
+            #Keep only values after the second occurence of "################################################"
+            labels = labels[labels.index("################################################")+1:]
+            labels = labels[labels.index("################################################")+1:][1:]
+            infos=[]
+            for label in labels:
+                label=label.split()
+                val=label[0]
+                color=label[1:4]
+                name=' '.join(label[7:]).replace('"','')
+                infos.append([val, color, name])
+            print(infos)
+            #Get napari.layers.Labels from self.labels_layer
+            
+            label_layer=[os.path.basename(x.name) for x in self.viewer.layers if isinstance(x,napari.layers.Labels)] #and x.name==self.labels_layer.value][0]
+            print(label_layer)
+            print(self.labels_layer.value.data)
+
+
+
+            
+
 #send get request to 10.29.225.156:5000/list_ckpts
 #return list of ckpts
 

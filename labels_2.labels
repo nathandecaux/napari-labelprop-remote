@@ -1,0 +1,35 @@
+################################################
+# ITK-SnAP Label Description File
+# File format: 
+# IDX   -R-  -G-  -B-  -A--  VIS MSH  LABEL
+# Fields: 
+#    IDX:   Zero-based index 
+#    -R-:   Red color component (0..255)
+#    -G-:   Green color component (0..255)
+#    -B-:   Blue color component (0..255)
+#    -A-:   Label transparency (0.00 .. 1.00)
+#    VIS:   Label visibility (0 or 1)
+#    IDX:   Label mesh visibility (0 or 1)
+#  LABEL:   Label description 
+################################################
+    0     0    0    0        0  0  0    "Clear Label"
+    1   255    0    0        1  1  1    "Gastrocnemieus (medial)"
+    2     0  255    0        1  1  1    "Gastrocnmieus (lateral)"
+    3     0    0  255        1  1  1    "Tibialis anterior"
+    4   255  255    0        1  1  1    "Soleus"
+    5     0  255  255        1  1  1    "Fibularis (brevis+longus)"
+    6   255    0  255        1  1  1    "Extensor digitorum/hallucis longus"
+    7    85  170  127        1  1  1    "Tibialis Posterior"
+    8   255  109   11        1  1  1    "Flexor Digitorum longus"
+    9   205  133   63        1  1  1    "Popliteus"
+   10   170    0  255        1  1  1    "Flexor hallucis longus"
+    11   255    0    0        1  1  1    "R_Gastrocnemieus (medial)"
+    12     0  255    0        1  1  1    "R_Gastrocnmieus (lateral)"
+    13     0    0  255        1  1  1    "R_Tibialis anterior"
+    14   255  255    0        1  1  1    "R_Soleus"
+    15     0  255  255        1  1  1    "R_Fibularis (brevis+longus)"
+    16   255    0  255        1  1  1    "R_Extensor digitorum/hallucis longus"
+    17    85  170  127        1  1  1    "R_Tibialis Posterior"
+    18   255  109   11        1  1  1    "R_Flexor Digitorum longus"
+    19   205  133   63        1  1  1    "R_Popliteus"
+   20   170    0  255        1  1  1    "R_Flexor hallucis longus"
