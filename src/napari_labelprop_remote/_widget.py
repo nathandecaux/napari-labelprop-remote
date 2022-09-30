@@ -8,7 +8,7 @@ Replace code below according to your needs.
 """
 from qtpy.QtWidgets import QWidget, QHBoxLayout
 from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container,Label,LineEdit
+from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container,Label,LineEdit,RadioButtons
 from magicgui.widgets import FunctionGui
 import sys
 import requests
@@ -26,6 +26,7 @@ import hashlib
 from napari.plugins import NapariPluginManager
 import napari
 import os
+import pandas as pd
 #Get path to this package
 package_path = os.path.dirname(os.path.abspath(__file__))
 print(package_path)
@@ -391,8 +392,8 @@ class training(FunctionGui):
         print(self.viewer.layers)
         self.hints.choices=['']+[x for x in self.viewer.layers if isinstance(x,napari.layers.Labels)]
 
-def set_label_colormap_function(labels_layer : "napari.layers.Labels"):
-    return labels
+def set_label_colormap_function(labels_layer : "napari.layers.Labels",table:pd.DataFrame):
+    return labels_layer
 
 class set_label_colormap(FunctionGui):
     def __init__(self,viewer: "napari.viewer.Viewer"):
@@ -400,28 +401,49 @@ class set_label_colormap(FunctionGui):
         self.viewer=viewer
         self.colormap_file=FileEdit(label='Get colormap from file')
         self.insert(-1,self.colormap_file)
-        self.colormap_file.changed.connect(self.update_colormap)
+        self.label_names=RadioButtons(label='Label names',choices=[])
+        self.file_button=PushButton(label='Load colormap')
+        self.file_button.clicked.connect(self.update_colormap)
+        self.insert(-1,self.file_button)
+        self.insert(-1,self.label_names)
+
+        # self.colormap_file.changed.connect(self.update_colormap)
+        self.label_names.changed.connect(self.update_selected_label)
 
     def update_colormap(self):
         if self.colormap_file.value!='':
-            with open("labels_2.labels", "r") as f:
+            with open(self.colormap_file.value, "r") as f:
                 labels = f.read().splitlines()
             #Keep only values after the second occurence of "################################################"
             labels = labels[labels.index("################################################")+1:]
             labels = labels[labels.index("################################################")+1:][1:]
-            infos=[]
+            choices={'choices':['0'],"key":['0 - Background']}
+            colormap={0:np.array([0,0,0,0])}
             for label in labels:
                 label=label.split()
                 val=label[0]
-                color=label[1:4]
+                color=np.array(label[1:4]).astype('float32')/255.
                 name=' '.join(label[7:]).replace('"','')
-                infos.append([val, color, name])
-            print(infos)
+                choices['key'].append(str(val)+' - '+name)
+                choices['choices'].append(str(val))
+                colormap[int(val)]=np.concatenate([color,np.array([1.],dtype='float32')])
             #Get napari.layers.Labels from self.labels_layer
+            # label_layer=[os.path.basename(x.name) for x in self.viewer.layers if isinstance(x,napari.layers.Labels)] #and x.name==self.labels_layer.value][0]
+            # print(label_layer)
+            layer=self.labels_layer.value
+            for layer in [x for x in self.viewer.layers if isinstance(x,napari.layers.Labels)]:
+                layer.color=colormap
+            key=choices['key']
+            #Convert key as a callable function that takes choices['choices'] as input and returns key
+            choices['key']=lambda x: key[choices['choices'].index(x)]
+            self.label_names.choices=choices
+    
+    def update_selected_label(self):
+        print(self.label_names.value)
+        layer=self.labels_layer.value
+        for layer in [x for x in self.viewer.layers if isinstance(x,napari.layers.Labels)]:
+            layer.selected_label=int(self.label_names.value)
             
-            label_layer=[os.path.basename(x.name) for x in self.viewer.layers if isinstance(x,napari.layers.Labels)] #and x.name==self.labels_layer.value][0]
-            print(label_layer)
-            print(self.labels_layer.value.data)
 
 
 
