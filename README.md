@@ -45,7 +45,7 @@ This will start a Flask web server on the host `<HOST>` and port `<PORT>`. The d
 
 ### Client
 
-###### Setup
+##### Setup
 
 Start napari and open the plugin with the following command :
 
@@ -94,3 +94,9 @@ To set the colormap of the labels, reach the plugin in the menu bar :
     Plugins > napari-labelprop-remote > Set label colormap
 
 Let you load a `Label Description` file from ITKSNAP and set it to the highlighted label layer.
+
+## Demo (inference)
+
+<p align="center">
+  <img src="https://github.com/nathandecaux/labelprop.github.io/raw/main/demo_cut.gif" width="600">
+</p>
