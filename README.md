@@ -55,7 +55,7 @@ Then, reach the plugin in the menu bar :
 
     Plugins > napari-labelprop-remote > Configure
 
-Fill the fields with the host and port of the server. Then, click on the `Configure Server` button. Once the server is configured, you will be able to set the server-side checkpoint directory. This is the directory where the server will save the checkpoints. The default value is `path/to/labelprop/checkpoints`
+Fill the fields with the host and port of the server. Set `localhost` as host if you have set the server in the same machine. Then, click on the `Configure Server` button. Once the server is configured, you will be able to set the server-side checkpoint directory. This is the directory where the server will save the checkpoints. The default value is `path/to/labelprop/checkpoints`
 
 ##### Training
 
