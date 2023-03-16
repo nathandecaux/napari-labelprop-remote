@@ -2,8 +2,10 @@
 
 3D semi-automatic segmentation using deep registration-based 2D label propagation
 ---------------------------------------------------------------------------------
-
-![](https://raw.githubusercontent.com/nathandecaux/labelprop/master/docs/client_server.drawio.svg)
+<!-- insert image and center it -->
+<p align="center">
+  <img src="https://github.com/nathandecaux/labelprop.github.io/raw/main/client_server.drawio.svg" width="600">
+</p>
 
 ## Installation
 
@@ -55,7 +57,7 @@ Then, reach the plugin in the menu bar :
 
 Fill the fields with the host and port of the server. Then, click on the `Configure Server` button. Once the server is configured, you will be able to set the server-side checkpoint directory. This is the directory where the server will save the checkpoints. The default value is `path/to/labelprop/checkpoints`
 
-###### Training
+##### Training
 
 To train a model, reach the plugin in the menu bar :
 
@@ -77,7 +79,7 @@ Fill the fields with the following information :
 
 Then, click on the `Run` button. The training will start and the progress will be displayed in the server console. Once the training is done, the checkpoint will be saved on the server-side checkpoint directory. Napari will display the forward (`propagated_up`) and backward (`propagated_down`) propagated labels and the fused labels (`propagated_fused`).
 
-###### Inference
+##### Inference
 
 To run inference on a model, reach the plugin in the menu bar :
 
@@ -85,7 +87,7 @@ To run inference on a model, reach the plugin in the menu bar :
 
 Fill the fields like in the training section. Then, click on the `Run` button.
 
-###### Set label colormap
+##### Set label colormap
 
 To set the colormap of the labels, reach the plugin in the menu bar :
 
