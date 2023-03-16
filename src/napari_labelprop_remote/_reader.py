@@ -84,9 +84,11 @@ def reader_function_nii(path):
     file = ni.load(path)
     # stack arrays into single array
     data = file.get_fdata()
-
-    #Remove translation on affine
-    add_kwargs={"name":str(path.split('/')[-1]).replace('nii.gz',''), 'metadata':dict(affine=file.affine, header=file.header)}
+    scale=file.header.get_zooms()
+    #Convert scale as scalefactor
+    scalefactor = scale
+    translate=file.header.get_sform()[:3,3]
+    add_kwargs={"name":str(path.split('/')[-1]).replace('nii.gz',''), 'metadata':dict(affine=file.affine, header=file.header), 'scale': scalefactor} #'scale':scalefactor, 'translate':translate}
     print('coucou',file.get_data_dtype())
     if 'uint' in str(file.get_data_dtype()) :
         layer_type='labels'

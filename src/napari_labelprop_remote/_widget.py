@@ -269,7 +269,7 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     try:
         npz_file=np.load(io.BytesIO(response.content),encoding = 'latin1')
         Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata,'scale':labels.scale}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata,'scale':labels.scale}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata,'scale':labels.scale}, 'labels')]
     except:
         #Convert f as string
         e=response.text
@@ -353,7 +353,7 @@ def training_function(image: "napari.layers.Image", labels: "napari.layers.Label
     try:
         npz_file=np.load(io.BytesIO(response.content),encoding = 'latin1')
         Y_up,Y_down,Y_fused=npz_file['Y_up'],npz_file['Y_down'],npz_file['Y_fused']
-        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata}, 'labels')]
+        return [((Y_up).astype('uint8'), {'name': 'propagated_up','metadata':labels.metadata,'scale':labels.scale}, 'labels'), ((Y_down).astype('uint8'), {'name': 'propagated_down','metadata':labels.metadata,'scale':labels.scale}, 'labels'), ((Y_fused).astype('uint8'), {'name': 'propagated_fused','metadata':labels.metadata,'scale':labels.scale}, 'labels')]
     except:
         #Convert f as string
         e=response.text
