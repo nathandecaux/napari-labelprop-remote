@@ -86,7 +86,7 @@ def reader_function_nii(path):
     data = file.get_fdata()
     scale=file.header.get_zooms()
     #Convert scale as scalefactor
-    scalefactor = scale
+    scalefactor = [1,1,1] #[scale] => Create issues 
     translate=file.header.get_sform()[:3,3]
     add_kwargs={"name":str(path.split('/')[-1]).replace('nii.gz',''), 'metadata':dict(affine=file.affine, header=file.header), 'scale': scalefactor} #'scale':scalefactor, 'translate':translate}
     print('coucou',file.get_data_dtype())
