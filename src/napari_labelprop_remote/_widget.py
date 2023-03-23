@@ -239,7 +239,8 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     This function will be turned into a widget using `autogenerate: true`.
     """
     r=urljoin(get_url(),'inference')
-    print(hints)
+    if label>0:
+        hints=(hints==label)*1
     if gpu:
         device='cuda'
     else:
@@ -301,7 +302,8 @@ class inference(FunctionGui):
         viewer.layers.events.inserted.connect(self.update_hints)
         viewer.layers.events.removed.connect(self.update_hints)
         self.viewer=viewer
-        
+        self.update_hints()
+
 
     def __call__(self):
         napari.utils.notifications.show_info('Inference started')
@@ -333,6 +335,8 @@ def training_function(image: "napari.layers.Image", labels: "napari.layers.Label
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
     arrays={'mask':labels.data.astype('uint8')}
+    if label>0:
+        hints=(hints==label)*1
     if hash in list_hash:
         params['hash']=hash
     else:
