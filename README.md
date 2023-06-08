@@ -2,7 +2,9 @@
 
 3D semi-automatic segmentation using deep registration-based 2D label propagation
 ---------------------------------------------------------------------------------
+
 <!-- insert image and center it -->
+
 <p align="center">
   <img src="https://github.com/nathandecaux/labelprop.github.io/raw/main/client_server.drawio.svg" width="600">
 </p>
@@ -38,7 +40,7 @@ Then, to install the napari plugin :
 
 Start the server with the following command :
 
-   labelprop launch-server [--addr,-a <HOST>] [--port,-p <PORT>]
+    labelprop launch-server [--addr,-a`<HOST>`] [--port,-p `<PORT>`]
 
 This will start a Flask web server on the host `<HOST>` and port `<PORT>`. The default values are `0.0.0.0` and `5000`.
 
@@ -64,10 +66,10 @@ To train a model, reach the plugin in the menu bar :
 
 Fill the fields with the following information :
 
--   `image` : Select a loaded napari.layers.Image layer to segment
--   `labels` : Select a loaded napari.layers.Labels layer with the initial labels
--  `hints` : Select a loaded napari.layers.Labels layer with scribbled pseudo labels
--  `pretrained checkpoint` : Select a pretrained checkpoint from the server-side checkpoint directory
+- `image` : Select a loaded napari.layers.Image layer to segment
+- `labels` : Select a loaded napari.layers.Labels layer with the initial labels
+- `hints` : Select a loaded napari.layers.Labels layer with scribbled pseudo labels
+- `pretrained checkpoint` : Select a pretrained checkpoint from the server-side checkpoint directory
 - `shape` : Set the shape of slices to use for training and inference
 - `z axis` : Set the axis to use for the propagation dimension
 - `max epochs` : Set the maximum number of epochs to train the model
