@@ -38,10 +38,9 @@ Then, to install the napari plugin :
 
 Start the server with the following command :
 
-    cd /path/to/labelprop
-    ./launch_server -p`<PORT>` -h `<HOST>`
+   labelprop launch-server [--addr,-a <HOST>] [--port,-p <PORT>]
 
-This will start a Flask web server on the host `<HOST>` and port `<PORT>`. The default values are `0.0.0.0` and `6000`.
+This will start a Flask web server on the host `<HOST>` and port `<PORT>`. The default values are `0.0.0.0` and `5000`.
 
 ### Client
 
