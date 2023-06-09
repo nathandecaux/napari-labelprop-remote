@@ -239,23 +239,27 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     This function will be turned into a widget using `autogenerate: true`.
     """
     r=urljoin(get_url(),'inference')
+    label_data=labels.data
+    hints_data=hints.data
     if label>0:
-        hints=(hints==label)*1
+        labels_data=(label_data==label)*1
+        if hints!='':
+            hints_data=(hints_data==label)*1
     if gpu:
         device='cuda'
     else:
         device='cpu'
-    params={'z_axis':z_axis,'label':label,'checkpoint':checkpoint,'criteria':criteria,'reduction':reduction,'device':device}
+    params={'z_axis':z_axis,'checkpoint':checkpoint,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
     napari.utils.notifications.show_info('Compressing images')
-    arrays={'mask':labels.data.astype('uint8')}
+    arrays={'mask':labels_data.astype('uint8')}
     if hash in list_hash:
         params['hash']=hash
     else:
         arrays['img']=image.data.astype('float32')
     if hints!='':
-        arrays['hints']=hints.data.astype('uint8')
+        arrays['hints']=hints_data.astype('uint8')
     buf=create_buf_npz(arrays)
     params=json.dumps(params).encode('utf-8')
     napari.utils.notifications.show_info('Sending request')
@@ -321,7 +325,7 @@ class inference(FunctionGui):
         print(self.viewer.layers)
         self.hints.choices=['']+[x for x in self.viewer.layers if isinstance(x,napari.layers.Labels)]
 
-def training_function(image: "napari.layers.Image", labels: "napari.layers.Labels",hints:"napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, max_epochs: int=10,checkpoint_name='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
+def training_function(image: "napari.layers.Image", labels: "napari.layers.Labels",hints:"napari.layers.Labels", pretrained_checkpoint: "napari.types.Path" = '', shape: int=256, z_axis: int=0, label : int=0, max_epochs: int=10,checkpoint_name='',criteria='ncc',reduction='none',gpu=True) -> "napari.types.LayerDataTuple":
     """Generate thresholded image.
 
     This function will be turned into a widget using `autogenerate: true`.
@@ -334,15 +338,20 @@ def training_function(image: "napari.layers.Image", labels: "napari.layers.Label
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':False,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
-    arrays={'mask':labels.data.astype('uint8')}
+    label_data=labels.data
+    hints_data=hints.data
     if label>0:
-        hints=(hints==label)*1
+        labels_data=(label_data==label)*1
+        if hints!='':
+            hints_data=(hints_data==label)*1
+
+    arrays={'mask':labels_data}
     if hash in list_hash:
         params['hash']=hash
     else:
         arrays['img']=image.data.astype('float32')
     if hints!='':
-        arrays['hints']=hints.data.astype('uint8')
+        arrays['hints']=hints_data.astype('uint8')
     buf=create_buf_npz(arrays)
     params=json.dumps(params).encode('utf-8')
 
