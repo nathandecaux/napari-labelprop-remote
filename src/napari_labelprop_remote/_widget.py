@@ -6,27 +6,38 @@ see: https://napari.org/plugins/stable/guides.html#widgets
 
 Replace code below according to your needs.
 """
-from qtpy.QtWidgets import QWidget, QHBoxLayout
-from magicgui import magic_factory,magicgui
-from magicgui.widgets import Select,Slider,PushButton,FileEdit,Container,Label,LineEdit,RadioButtons
-from magicgui.widgets import FunctionGui
-import sys
-import requests
-from enum import Enum,unique
-import requests
-import json
-from enum import Enum
-import nibabel as ni
-import io
-import numpy as np
-from urllib.parse import urljoin
-import time
 import functools
 import hashlib
-from napari.plugins import NapariPluginManager
-import napari
+import io
+import json
 import os
+import sys
+import time
+from enum import Enum, unique
+from urllib.parse import urljoin
+import subprocess
+import napari
+import nibabel as ni
+import numpy as np
 import pandas as pd
+import requests
+import socket
+
+from magicgui import magic_factory, magicgui
+from magicgui.widgets import (
+    Container,
+    FileEdit,
+    FunctionGui,
+    Label,
+    LineEdit,
+    PushButton,
+    RadioButtons,
+    Select,
+    Slider,
+)
+from napari.plugins import NapariPluginManager
+from qtpy.QtWidgets import QHBoxLayout, QWidget
+
 #Get path to this package
 package_path = os.path.dirname(os.path.abspath(__file__))
 print(package_path)
@@ -187,6 +198,11 @@ class settings(FunctionGui):
         self.insert(-1,self.ckpt)
         self.insert(-1,self.send_button)
 
+        #Add a "Start locally" button
+        self.start_locally=PushButton(text='Start locally')
+        self.start_locally.clicked.connect(self._start_locally)
+        self.insert(-1,self.start_locally)
+
         if 'Server Unavailable' in list_ckpts:
             self.status.value='Server Unavailable'
             self.checkpoint_dir.hide()
@@ -224,6 +240,31 @@ class settings(FunctionGui):
         ckpt_dir=self.checkpoint_dir.value
         set_ckpt_dir(ckpt_dir)
         napari.utils.notifications.show_info('Checkpoint directory set')
+
+    def _start_locally(self):
+        #Do "labelprop launch-server" in a subprocess
+        print(self.port.value,self.host.value)
+
+        try:
+            subprocess.Popen(f'labelprop launch-server -p {self.port.value} -a {self.host.value}',shell=True)
+            #While out as not "* Running on" in it, wait 5 seconds
+            timeout=0
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex((self.host.value,int(self.port.value)))
+            while int(result)!=0 :
+                time.sleep(2)
+                timeout+=2
+                if timeout>10:
+                    raise Exception('Server not able to start')
+                result = sock.connect_ex((self.host.value,int(self.port.value)))
+            self.__call__()
+
+        except:
+            napari.utils.notifications.show_error('Server not able to start')
+            return False
+        #Check if server is running
+        
+
 
 
 
