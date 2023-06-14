@@ -15,11 +15,11 @@
 
 Install [LabelProp](https://github.com/nathandecaux/labelprop)
 
-To install it with CUDA 11.1 :
+To install it with CUDA 11.8 :
 
     git clone https://github.com/nathandecaux/labelprop
     cd labelprop
-    pip install torch==1.10.2  --extra-index-url https://download.pytorch.org/whl/cu111
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     pip install -e .
 
 ### Client
