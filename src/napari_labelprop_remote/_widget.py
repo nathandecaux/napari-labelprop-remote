@@ -280,10 +280,10 @@ def inference_function(image: "napari.layers.Image", labels: "napari.layers.Labe
     This function will be turned into a widget using `autogenerate: true`.
     """
     r=urljoin(get_url(),'inference')
-    label_data=labels.data
+    labels_data=labels.data
     hints_data=hints.data
     if label>0:
-        labels_data=(label_data==label)*1
+        labels_data=(labels_data==label)*1
         if hints!='':
             hints_data=(hints_data==label)*1
     if gpu:
@@ -379,10 +379,10 @@ def training_function(image: "napari.layers.Image", labels: "napari.layers.Label
     params={'pretrained_ckpt':pretrained_checkpoint,'shape':shape,'z_axis':z_axis,'max_epochs':max_epochs,'name':checkpoint_name,'pretraining':False,'criteria':criteria,'reduction':reduction,'device':device}
     hash=hash_array(image.data.astype('float32'))
     list_hash=get_hash()
-    label_data=labels.data
+    labels_data=labels.data
     hints_data=hints.data
     if label>0:
-        labels_data=(label_data==label)*1
+        labels_data=(labels_data==label)*1
         if hints!='':
             hints_data=(hints_data==label)*1
 
